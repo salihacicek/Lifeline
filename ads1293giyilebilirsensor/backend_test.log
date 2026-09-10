@@ -1,0 +1,80 @@
+INFO:     Started server process [32851]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8085 (Press CTRL+C to quit)
+INFO:     127.0.0.1:57465 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20100" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57467 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20100" [accepted]
+INFO:     connection open
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+15-Class ECG Model loaded.
+Grad-CAM Explainer initialized.
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_100_ch0.npz
+Client disconnected
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_100_ch0.npz
+Client disconnected
+INFO:     127.0.0.1:57482 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57482 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57484 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20100" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57488 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20108" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57629 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20108" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57631 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20111" [accepted]
+INFO:     connection open
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_100_ch0.npz
+Client disconnected
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_108_ch0.npz
+Client disconnected
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_108_ch0.npz
+Client disconnected
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_111_ch0.npz
+Client disconnected
+INFO:     127.0.0.1:57643 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57643 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57645 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20100" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57647 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20108" [accepted]
+INFO:     connection open
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_100_ch0.npz
+Client disconnected
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_108_ch0.npz
+Client disconnected
+INFO:     127.0.0.1:57733 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57733 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57735 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20108" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57739 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20108" [accepted]
+INFO:     connection open
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_108_ch0.npz
+Client disconnected
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_108_ch0.npz
+Client disconnected
+INFO:     127.0.0.1:57761 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57761 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57763 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20108" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57766 - "WebSocket /ws/ecg/PTB-XL%20%28Ger%C3%A7ek%20Hasta%29%3A%20records100/00000/00012_lr" [accepted]
+INFO:     connection open
+sys:1: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+INFO:     127.0.0.1:57768 - "WebSocket /ws/ecg/PTB-XL%20%28Ger%C3%A7ek%20Hasta%29%3A%20records100/00000/00001_lr" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57770 - "WebSocket /ws/ecg/PTB-XL%20%28Ger%C3%A7ek%20Hasta%29%3A%20records100/00000/00008_lr" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57772 - "WebSocket /ws/ecg/PTB-XL%20%28Ger%C3%A7ek%20Hasta%29%3A%20records100/00000/00033_lr" [accepted]
+INFO:     connection open
+[PhysioNetLoader] Önbellekten yükleniyor: /Users/salihacicek/.ads1293_cache/mitdb_108_ch0.npz
+Client disconnected
+Client disconnected
+Client disconnected
+Client disconnected
+Client disconnected
+INFO:     127.0.0.1:57803 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57803 - "GET /api/files HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59292 - "WebSocket /ws/ecg/MIT-BIH%20%28Ger%C3%A7ek%20Hasta%29%3A%20101" [accepted]
+INFO:     connection open
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [32851]

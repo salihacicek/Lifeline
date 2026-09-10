@@ -1,0 +1,102 @@
+.patient-info-container {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.upload-header h2 {
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.patient-meta {
+  display: none;
+}
+
+.upload-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.dropdown-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--text-muted);
+  border-radius: 8px;
+  flex: 1;
+  transition: all 0.2s;
+}
+
+.dropdown-container:focus-within {
+    border-color: var(--accent-primary);
+    background: rgba(14, 165, 233, 0.1);
+}
+
+.dropdown-icon {
+    color: var(--text-secondary);
+}
+
+.file-dropdown {
+    width: 100%;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.file-dropdown option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.upload-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  min-width: 160px;
+  justify-content: center;
+}
+
+.upload-button:hover:not(:disabled) {
+  background: var(--accent-secondary);
+  transform: translateY(-1px);
+}
+
+.upload-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-button.success {
+  background: var(--status-critical);
+}
+
+.upload-button.error {
+  background: var(--status-critical);
+}

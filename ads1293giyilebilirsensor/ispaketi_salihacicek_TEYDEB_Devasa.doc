@@ -1,0 +1,681 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; text-align: justify; }
+  h1 { font-size: 16pt; font-weight: bold; margin-top: 24pt; margin-bottom: 12pt; color: #000000; }
+  h2 { font-size: 14pt; font-weight: bold; margin-top: 18pt; margin-bottom: 10pt; color: #000000; }
+  h3 { font-size: 12pt; font-weight: bold; font-style: italic; margin-top: 12pt; margin-bottom: 6pt; color: #000000; }
+  p { margin-bottom: 10pt; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12pt; margin-bottom: 12pt; }
+  th, td { border: 1px solid black; padding: 6pt; text-align: left; font-size: 11pt; }
+  th { background-color: #d9d9d9; font-weight: bold; }
+  li { margin-bottom: 6pt; }
+</style>
+</head>
+<body>
+
+<h1>C.1.2. İş Paketleri Listesi</h1>
+
+<!-- IS PAKETI 1 -->
+<h1>İŞ PAKETİ 1 (İş Paketi Kodu: 101)</h1>
+<p><strong>İş Paketi Adı:</strong> Yüksek Çözünürlüklü (24-bit) ADS1293 Donanım Entegrasyonu ve Ham EKG Veri Toplama Altyapısının Kurulması<br>
+<strong>Başlama-Bitiş Tarihi ve Süresi:</strong> 1. Ay - 3. Ay (90 Gün)</p>
+
+<p><strong>1. İş Paketi Genel Kapsamı ve Amacı (Ana Anlatım):</strong> Kardiyovasküler hastalıkların teşhisinde, elektrokardiyografi (EKG) sinyallerinin donanımsal olarak hatasız ve yüksek kalitede toplanması, sonrasında çalışacak olan yapay zeka algoritmalarının başarısını belirleyen en kritik temel taştır. Mevcut piyasadaki Holter ve EKG cihazlarının büyük çoğunluğu 12-bit veya 16-bit Analog-Dijital Çeviriciler (ADC) kullanmaktadır. Bu durum, özellikle mikro düzeydeki kardiyak anormalliklerin (örneğin hafif T-Dalgası inversiyonları veya çok küçük ST-Segment çökmeleri) dijitalleştirme sırasında kaybolmasına veya gürültü olarak algılanmasına yol açmaktadır. Bu iş paketi kapsamında, projemizin donanım omurgasını oluşturan Texas Instruments ADS1292R/ADS1293 analog ön uç (AFE) medikal entegreleri kullanılacaktır. Bu çiplerin en büyük Ar-Ge ve inovasyon değeri, 24-bit çözünürlüğe sahip olmaları ve saniyede 360 örnekleme (360 Hz Sample Rate) yaparak olağanüstü yüksek bir veri yoğunluğu sunmalarıdır. Donanım mimarisinde, ADS1293 üzerinden gelen bu yoğun veri akışı (SPI haberleşme protokolü ile), STM32F103/STM32F4 serisi mikrodenetleyicilere gerçek zamanlı olarak (Direct Memory Access - DMA kullanılarak) aktarılacaktır. Saniyede 360 veri noktasından oluşan bu ham veri akışı, Two's Complement (İkiye Tümler) formatında hexadesimal olarak işlemciye ulaşacaktır. İşlemci üzerinde geliştirilecek gömülü yazılım algoritmaları ile bu hex değerleri, V_REF/(Gain×2^23) medikal kullanılarak doğrudan μV (mikrovolt) cinsine dönüştürülecektir. Ayrıca, kablosuz iletişim veya SD Kart yazma süreçlerinde oluşabilecek olası milisaniyelik veri kayıplarını (packet drop) kompanze etmek için "Cubic Spline İnterpolasyonu" modülü donanım seviyesinde çalıştırılarak, eksik sinyal parçalarının anatomik EKG eğrisine uygun şekilde matematiksel olarak tamamlanması sağlanacaktır.</p>
+
+<h2>Alt Geniş Faaliyet 1.1: 24-Bit Donanım Mimarisi ve Analog Front-End (AFE) Tasarımı</h2>
+<p>Projenin donanımsal temelini oluşturan sensör ağının geliştirilmesi, yüksek hassasiyetli bir Analog Ön Uç (AFE) entegrasyonu gerektirmektedir. Kalpten yayılan zayıf elektriksel sinyallerin (yaklaşık 1-5 mV genliğinde) cilt yüzeyinden alınarak yükseltilmesi ve dijital formata çevrilmesi aşaması, projenin klinik geçerliliğini (Diagnostic Grade) belirleyen en kritik mühendislik adımıdır. Bu bağlamda, donanım tasarımında klasik yaklaşımların ötesine geçilerek, medikal standartlara (IEC 60601-1) uygun, elektriksel izolasyonu sağlanmış ve ultra düşük gürültülü bir donanım mimarisi kurgulanmıştır. Elektrot empedanslarının sürekli olarak donanım seviyesinde izlenmesi (Lead-Off Detection) ve eş modlu reddetme oranının (CMRR) maksimize edilmesi hedeflenmektedir.</p>
+
+<h3>Teknik Alt Görev 1.1.1: ADS1293 Medikal Entegre Seçimi ve 24-Bit ADC Çözünürlüğünün Matematiksel Analizi</h3>
+<p>Kardiyak sinyallerin dijitalleştirilmesi işleminde, Texas Instruments tarafından medikal uygulamalar için özel üretilmiş ADS1293 entegresi kullanılacaktır. Bu aşamada, entegrenin 3 kanallı (3-Channel) yapısı sayesinde standart Einthoven üçgeni derivasyonları (Lead I, II, III) eşzamanlı ve senkronize olarak örneklenmektedir. Entegre içerisindeki 24-bit Sigma-Delta (ΣΔ) ADC'ler, sinyali aşırı örnekleme (Oversampling) yöntemiyle dijitalleştirirken donanımsal dijital filtreleme (Sinc filter) ile yüksek frekanslı quantization gürültüsünü (kuantalama hatasını) elimine eder. Bu sayede, 360 Hz gibi yüksek bir veri okuma hızında bile efektif çözünürlük (Effective Number of Bits - ENOB) korunmaktadır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden ADS1293 ve 24-bit ADC?)</h3>
+<p>Klasik gömülü sistem projelerinde sıklıkla tercih edilen mikrokontrolör (MCU) dahili ADC'leri veya piyasadaki standart medikal modüller (Örn: AD8232) genellikle 10-bit veya 12-bit çözünürlüğe sahiptir. Ancak klinik bir EKG'de erken evre Miyokard İskemisi (Kalp Krizi başlangıcı) teşhisi, ST segmentindeki milimetrik çökmelere (bazen 50 mikrovolt seviyesinde) bağlıdır. 3.3 Volt referans gerilimi kullanan bir sistemde 12-bit ADC'nin En Önemsiz Bit (LSB) çözünürlüğü yaklaşık 805 μV'dur (3.3V / 4096). Bu durum, 50 μV genliğindeki bir ST çökmesinin dijitalleştirme aşamasında "sıfır" olarak okunmasına (kaybolmasına) veya kaba bir gürültü gibi basamaklı bir sinyale dönüşmesine neden olur. ADS1293 entegresinin 24-bit mimarisi (16.777.216 adım) ise teorik olarak LSB başına ~0.19 μV (amplifikasyon kazancıyla birlikte) çözünürlük sağlar. Bu devasa hassasiyet farkı, kardiyoloğun çıplak gözle göremeyeceği elektriksel bozulmaları yapay zeka modelimizin kusursuz şekilde analiz edebilmesinin yegâne matematiksel gerekçesidir.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: ADS1293 (24-bit AFE)</th>
+        <th>Alternatif Yöntem 1: Standart MCU ADC (12-bit)</th>
+        <th>Alternatif Yöntem 2: AD8232 Modülü (Analog Çıkış)</th>
+    </tr>
+    <tr>
+        <td><strong>LSB Çözünürlüğü (3.3V Referans)</strong></td>
+        <td>~0.19 μV (Ultra Hassas)</td>
+        <td>~805 μV (Çok Kaba, detayları gizler)</td>
+        <td>Değişken (Harici ADC'ye bağımlı)</td>
+    </tr>
+    <tr>
+        <td><strong>Ortak Mod Reddetme (CMRR)</strong></td>
+        <td>> 100 dB (Mükemmel şebeke bağışıklığı)</td>
+        <td>< 60 dB (Düşük)</td>
+        <td>~80 dB (Orta Seviye)</td>
+    </tr>
+    <tr>
+        <td><strong>Klinik Teşhis (Diagnostic) Uygunluğu</strong></td>
+        <td>Tam Uyumlu (TİTCK / FDA standartlarında)</td>
+        <td>Uygun Değil (Sadece nabız ölçebilir)</td>
+        <td>Kısmi Uyumlu (Spor/Fitness amaçlı)</td>
+    </tr>
+    <tr>
+        <td><strong>İşlemciye (CPU) Getirdiği Yük</strong></td>
+        <td>Çok Düşük (Sinyal ön işleme çip içinde yapılır)</td>
+        <td>Çok Yüksek (Sürekli kesme yaratır)</td>
+        <td>Yüksek (Dışarıdan analog sinyal okunmalı)</td>
+    </tr>
+</table>
+
+<h2>Alt Geniş Faaliyet 1.2: Gerçek Zamanlı Veri Aktarımı ve Gömülü Yazılım Protokolleri</h2>
+<p>ADS1293 çipi üzerinden elde edilen dijital verilerin, mikrodenetleyiciye (STM32 serisi) aktarılması sürecinde "Sıfır Veri Kaybı (Zero Packet Drop)" ve "Düşük Gecikme (Ultra-Low Latency)" hedeflenmektedir. Bu kapsamda, saniyede yüzlerce veri paketinin donanım birimleri arasında taşınmasını sağlayacak bir gömülü yazılım mimarisi inşa edilecektir. İletişim protokolü olarak 4-kablolu Serial Peripheral Interface (SPI) kullanılacak olup, saat frekansı (SCLK) medikal veriyi darboğaza sokmayacak seviyede optimize edilecektir.</p>
+
+<h3>Teknik Alt Görev 1.2.1: SPI Haberleşme Hattı ve Direct Memory Access (DMA) Konfigürasyonu</h3>
+<p>STM32 mikrodenetleyicisi ile ADS1293 arasındaki SPI veri alışverişi, mikrodenetleyicinin çekirdeğini (CPU) tamamen baypas eden Donanımsal Doğrudan Bellek Erişimi (DMA) denetleyicisi üzerinden gerçekleştirilecektir. Geliştirilecek firmware (gömülü yazılım) mimarisinde, SPI çevre birimi yeni bir veri hazır olduğunda DMA'ya donanımsal bir tetikleme (trigger) gönderecek; DMA ise bu veriyi SPI veri yazmacından alarak doğrudan tahsis edilmiş dairesel bir RAM tamponuna (Circular Buffer) yazacaktır. İşlemci, sadece tampon yarıya veya tama ulaştığında (Half-Transfer / Full-Transfer Interrupt) uyanarak verileri paketleyecektir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden DMA Tabanlı SPI?)</h3>
+<p>Klasik kesme (Interrupt) tabanlı bir haberleşmede, 360 Hz hızında 3 kanal (toplam 1080 paket/saniye) verinin her biri için işlemci anlık yaptığı işi bırakıp kesme fonksiyonuna (ISR - Interrupt Service Routine) gitmek zorundadır. Bu durum, saniyede binlerce kez CPU'nun "Context Switching" yapmasına neden olur ve işlemci yükünü %60-70'lere fırlatır. Bu ağır yük altında, işlemcinin asıl görevi olan dijital sinyal filtreleme (IIR Butterworth) ve yapay zeka özellik çıkarımı algoritmalarına yeterli zaman (CPU Cycle) kalmaz, sistem kilitlenir (Crash) veya paket düşürür (Packet Loss). DMA yönteminin seçilmesinin kesin Ar-Ge gerekçesi; veri taşıma işlemini CPU'dan alıp arka plandaki bağımsız bir donanıma devrederek CPU yükünü %5'in altına düşürmek ve sistemi "Sürekli Akışkan (Deterministic)" bir hale getirmektir.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: DMA Tabanlı SPI</th>
+        <th>Alternatif Yöntem 1: Interrupt (Kesme) Tabanlı SPI</th>
+        <th>Alternatif Yöntem 2: Polling (Sürekli Yoklama) Tabanlı SPI</th>
+    </tr>
+    <tr>
+        <td><strong>İşlemci (CPU) Kullanımı</strong></td>
+        <td>%2 - %5 (İşlemci serbest kalır)</td>
+        <td>%50 - %70 (Aşırı CPU tüketimi)</td>
+        <td>%90 - %100 (İşlemci başka iş yapamaz)</td>
+    </tr>
+    <tr>
+        <td><strong>Veri Kaybı Riski (360 Hz'de)</strong></td>
+        <td>%0 (Sıfır Veri Kaybı)</td>
+        <td>Yüksek (Başka kesmelerle çakışırsa)</td>
+        <td>Çok Yüksek (Zamanlama hataları)</td>
+    </tr>
+    <tr>
+        <td><strong>Enerji Tüketimi (Batarya Ömrü)</strong></td>
+        <td>Çok Düşük (CPU Uyku moduna geçebilir)</td>
+        <td>Yüksek (Sürekli Context Switch)</td>
+        <td>Çok Yüksek (Sürekli aktif döngü)</td>
+    </tr>
+</table>
+
+<h2>Alt Geniş Faaliyet 1.3: Veri Bütünlüğü ve Kayıp Kompansasyonu</h2>
+<p>Giyilebilir IoT cihazlarında, donanımın sınırlarını zorlayan çevresel etmenler (örneğin titreşim, aşırı EMI/EMC gürültüsü) veya Bluetooth üzerinden aktarım sırasında geçici radyo frekansı tıkanıklıkları nedeniyle milisaniyelik veri kayıpları yaşanabilir. Veri setindeki boşluklar (Missing Values), yapay zeka modelinin yanlış teşhis koymasına yol açacağı için, veri bütünlüğünün yazılımsal olarak sağlanması (Data Imputation) kritik bir gereksinimdir.</p>
+
+<h3>Teknik Alt Görev 1.3.1: Cubic Spline İnterpolasyonu ile Eksik Veri Onarımı (Data Imputation)</h3>
+<p>Eksik veri bloklarının saptanması amacıyla yazılımsal bir "Zaman Damgası (Timestamp)" doğrulama mekanizması kodlanacaktır. Bir paket kaybı tespit edildiğinde, kayıp verinin öncesindeki ve sonrasındaki sağlam veri noktaları kullanılarak 3. dereceden (Cubic) polinom denklemleri üzerinden eğri uydurma (Curve Fitting) işlemi gerçekleştirilecektir. C dili ile gömülü sisteme entegre edilecek bu algoritma, eksik bölgeyi fizyolojik EKG eğrisinin anatomik doğasına (türev sürekliliği) uygun şekilde onaracaktır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Cubic Spline İnterpolasyonu?)</h3>
+<p>Eksik veri tamamlama literatüründe en sık kullanılan yöntem Doğrusal (Linear) İnterpolasyondur. Ancak Linear yöntem, eksik iki noktayı düz bir çizgiyle birleştirir. EKG sinyali ise tamamen eğrisel ve non-lineer (R tepesi, T dalgası) bir yapıya sahiptir. Düz bir çizgi çekilmesi, sinyalin birinci ve ikinci dereceden türevlerini bozar, bu da Pan-Tompkins gibi türev tabanlı özellik çıkarım algoritmalarının o bölgeyi "gürültü" veya "kalp atışı" olarak yanlış yorumlamasına sebep olur. Cubic Spline yöntemi ise, noktalar arasına 3. dereceden polinomlar yerleştirip bağlantı noktalarında birinci ve ikinci türevlerin sürekli olmasını zorunlu kılar. Bu matematiksel koşul, onarılan sinyalin doğal bir EKG eğrisi gibi "yumuşak ve organik" görünmesini sağlar. İleri yapay zeka yöntemleri (Örn: KNN Imputation) ise bir mikrodenetleyicide (Edge) çalışmak için çok fazla RAM ve işlemci gücü gerektirdiğinden giyilebilir cihaz kısıtlarına takılarak elenmiştir.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: Cubic Spline İnterpolasyonu</th>
+        <th>Alternatif Yöntem 1: Linear İnterpolasyon</th>
+        <th>Alternatif Yöntem 2: K-Nearest Neighbors (KNN) Imputation</th>
+    </tr>
+    <tr>
+        <td><strong>Klinik Sinyal Bütünlüğü (Morfoloji)</strong></td>
+        <td>Mükemmel (Doğal eğriliği korur)</td>
+        <td>Kötü (Düz çizgiler oluşturur, türevi bozar)</td>
+        <td>İyi (Veri yapısına uyar)</td>
+    </tr>
+    <tr>
+        <td><strong>Algoritma Gecikmesi (Edge Cihazda)</strong></td>
+        <td>Kabul Edilebilir (~5-10 ms)</td>
+        <td>Çok Düşük (<1 ms)</td>
+        <td>Çok Yüksek (Matris hesaplamaları gerekir)</td>
+    </tr>
+    <tr>
+        <td><strong>RAM ve ROM İhtiyacı</strong></td>
+        <td>Orta (Düşük kaynak tüketimi)</td>
+        <td>Çok Düşük</td>
+        <td>Çok Yüksek (Tüm veri setini hafızada tutmalı)</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 1: Başarı Kriterleri Tablosu</h2>
+<table>
+    <tr>
+        <th>Başarı Kriteri ve İncelenecek Metrik</th>
+        <th>Hedeflenen Değer</th>
+        <th>Ölçüm Gerekçesi / TEYDEB Etkisi</th>
+    </tr>
+    <tr>
+        <td><strong>ADC Hassasiyeti (Çözünürlük LSB)</strong></td>
+        <td>≤ 0.30 μV</td>
+        <td>Mikro dalga deformasyonlarını (erken iskemi) analog gürültüden ayırt edebilme yeteneğinin kanıtlanması.</td>
+    </tr>
+    <tr>
+        <td><strong>Veri Teslim Oranı (PDR - Packet Delivery Ratio)</strong></td>
+        <td>≥ %99.9</td>
+        <td>DMA-SPI altyapısının darboğaz yaşanmadan 360 Hz kesintisiz veri aktarımını sağladığının doğrulanması.</td>
+    </tr>
+    <tr>
+        <td><strong>Donanım-Yazılım Uçtan Uca Gecikme (End-to-End Latency)</strong></td>
+        <td>< 10 ms</td>
+        <td>Analog sinyalin sensörden işlemci belleğine geçip dijital değere dönüştürülme hızının gerçek zamanlılığının kanıtlanması.</td>
+    </tr>
+    <tr>
+        <td><strong>Ortak Mod Reddetme Oranı (CMRR) Performansı</strong></td>
+        <td>> 95 dB</td>
+        <td>Sistemin hastane ortamındaki şiddetli çevresel gürültülere karşı elektronik bağışıklığının laboratuvar testleriyle ispatı.</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 1: Risk Yönetimi ve B Planı (Mitigasyon) Tablosu</h2>
+<table>
+    <tr>
+        <th>Olası Risk / Başarısızlık Senaryosu</th>
+        <th>Riskin Şiddeti</th>
+        <th>B Planı (Mitigasyon Stratejisi)</th>
+    </tr>
+    <tr>
+        <td><strong>Veri Yolu Tıkanması (SPI Bottleneck) ve Kilitlenme</strong></td>
+        <td>Yüksek</td>
+        <td>Eğer birden fazla kesme (BLE, Sensör, Timer) çakışırsa, işletim sistemi olarak FreeRTOS kurularak veri okuma ve DMA aktarım görevlerine mutlak "En Yüksek Öncelik (Highest Priority)" atanacak ve donanımsal FIFO tampon bellek boyutları iki katına çıkarılacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Elektrot Empedansının Bozulması (Lead-Off)</strong></td>
+        <td>Yüksek</td>
+        <td>Kullanıcının terlemesi veya hareket etmesi sonucu EKG elektrotlarının cilde teması zayıflayabilir. Bu durumda ADS1293'ün dahili "AC/DC Lead-Off Detection" donanım bloğu aktif edilecek ve kopukluk anında doktora "Gürültülü Veri - Elektrotları Kontrol Edin" bildirimi gönderilerek yapay zekanın çöp veriyle eğitilmesi engellenecektir.</td>
+    </tr>
+</table>
+
+<!-- IS PAKETI 2 -->
+<h1>İŞ PAKETİ 2 (İş Paketi Kodu: 102)</h1>
+<p><strong>İş Paketi Adı:</strong> EKG Sinyal Ön İşleme (Dijital Filtreleme), Gürültü Arındırma ve Pan-Tompkins ile QRS Morfoloji Çıkarımı<br>
+<strong>Başlama-Bitiş Tarihi ve Süresi:</strong> 4. Ay - 6. Ay (90 Gün)</p>
+
+<p><strong>1. İş Paketi Genel Kapsamı ve Amacı (Ana Anlatım):</strong> Holter cihazları gibi giyilebilir EKG sensörlerinden elde edilen ham veriler klinik olarak doğrudan kullanılamaz durumdadır. Hastanın günlük yaşamındaki kas hareketleri (Elektromiyogram - EMG gürültüsü, Motion Artifact), solunum faaliyetlerinden kaynaklanan bazal kaymalar (Baseline Wander) ve prizlerden yayılan 50/60 Hz şebeke parazitleri (Powerline Interference) sinyali ciddi şekilde bozmaktadır. Bu iş paketinin ana amacı, ADS1293'ten alınan bu gürültülü veriyi, klinik teşhis koymaya yetecek (Diagnostic Grade) temizliğe ve sinyal-gürültü oranına (SNR) ulaştırmaktır. Klasik yaklaşımda donanımsal analog filtreler kullanılırken, biz projemizde matematiksel olarak çok daha hassas olan Dijital IIR Butterworth ve FIR filtreleme mimarilerini kullanacağız. Bu sayede EKG dalgasındaki faz kaymalarını (Phase Shift) sıfıra indirgeyeceğiz. Filtreleme işlemi tamamlandıktan sonra, tertemiz hale gelen EKG sinyali üzerinden hastanın P, Q, R, S ve T dalga tepelerinin noktalarını bulmamız gerekmektedir. Bu işlem için literatürün altın standardı olan Pan-Tompkins Algoritması projemize özel bir revizyonla entegre edilecektir. Pan-Tompkins algoritmasının Türev Alma (Derivative), Kare Alma (Squaring) ve Hareketli Pencere İntegrali (Moving Window Integration) adımlarının ardından uygulayacağımız Adaptif Eşikleme (Adaptive Thresholding) ve Geriye Dönük Arama (Search-Back) metotları ile, amplitüdü düşük olan R dalgaları bile asla kaçırılmayacaktır. Ayrıca, T dalgası çok yüksek olan kalp krizi (MI) hastalarında T dalgasının yanlışlıkla R dalgası sanılarak çift sayılmasını (Oversensing) engelleyecek akıllı körleme (Blanking Period) algoritmaları kodlanacaktır.</p>
+
+<h2>Alt Geniş Faaliyet 2.1: Sinyal Ön İşleme ve Gelişmiş Gürültü Filtreleme Mimarisi</h2>
+<p>Kardiyak sinyallerin yorumlanmasından önce, tanısal değeri olmayan frekans bileşenlerinin spektrumdan temizlenmesi zorunludur. Bu kapsamda uç (edge) cihazın sınırlı işlemci kapasitesine uygun, ancak klinik hassasiyetten ödün vermeyen dijital sinyal işleme (DSP) boru hattı (pipeline) inşa edilecektir. Filtreleme süreci kaskad (peş peşe) bağlı üç temel adımdan oluşmaktadır: Düşük frekanslı bazal kaymaların silinmesi, şebeke gürültüsünün bastırılması ve yüksek frekanslı kas kasılma parazitlerinin yalıtılması.</p>
+
+<h3>Teknik Alt Görev 2.1.1: Yüksek ve Alçak Geçiren IIR Butterworth Filtrelerinin Tasarımı</h3>
+<p>Solunuma bağlı bazal kaymaları (Baseline Wander) temizlemek için 0.5 Hz Kesim Frekanslı (Cutoff) Yüksek Geçiren (High-Pass) Filtre; EMG (kas) gürültülerini engellemek için ise 40 Hz Kesim Frekanslı Alçak Geçiren (Low-Pass) Filtre C dilinde geliştirilip işlemciye yüklenecektir. Düz geçiş bandına (maximally flat passband) sahip Butterworth topolojisi tercih edilmiş olup, filtre katsayıları 4. dereceye (4-pole) göre hesaplanarak frekans yanıtında keskin bir düşüş (roll-off) sağlanacaktır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden IIR Butterworth ve Dijital Filtre?)</h3>
+<p>Medikal mühendislik literatüründe en çok tartışılan konulardan biri analog filtre mi yoksa dijital filtre mi kullanılacağı, dijital kullanılacaksa FIR mı yoksa IIR mı seçileceğidir. Analog filtreler, kapasitör toleransları nedeniyle zamanla kalibrasyon bozulmaları yaşar ve EKG dalgasının fazını kaydırarak anatomik morfolojiyi geri dönülmez şekilde bozar. Bu nedenle kesin kararla "Dijital Yazılım Filtresi" seçilmiştir. Dijital tarafta FIR (Finite Impulse Response) filtreler doğrusal faz (zero phase distortion) sağladığı için EKG için ideal görünse de, 0.5 Hz gibi çok düşük bir frekansta kesim yapabilmek için binlerce katsayı (tap) ile çarpım-toplam işlemi (MAC) yapması gerekir. Giyilebilir, pille çalışan bir işlemcide FIR kullanmak cihazı saniyeler içinde ısıtır ve bataryayı bitirir. Bizim seçtiğimiz IIR (Infinite Impulse Response) Butterworth filtresi ise, önceki çıktıları geri besleme (feedback) olarak kullandığından sadece 4. dereceden katsayılar ile aynı frekans kesimini (roll-off) sağlar. Bu durum CPU döngüsünü (cycle) muazzam oranda düşürür. IIR filtrelerin doğasında olan "Faz Kaydırma (Phase Shift)" problemi ise, veriyi işlemci içinde önce ileri, sonra zaman ekseninde geri doğru filtreden geçiren "FiltFilt (Zero-Phase Filtering)" algoritmasının koda eklenmesiyle tamamen çözülmüş, böylece hem düşük güç tüketimi hem de sıfır morfolojik bozulma (FIR kalitesinde) elde edilmiştir.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: Dijital IIR Butterworth (FiltFilt Destekli)</th>
+        <th>Alternatif Yöntem 1: Dijital FIR Filtre</th>
+        <th>Alternatif Yöntem 2: Analog Donanım Filtresi (Op-Amp)</th>
+    </tr>
+    <tr>
+        <td><strong>İşlemci (CPU) Çarpım/Toplam (MAC) Yükü</strong></td>
+        <td>Çok Düşük (Sadece 4-5 tap hesaplama)</td>
+        <td>Aşırı Yüksek (>500 tap hesaplama)</td>
+        <td>Yok (Donanımda yapılır)</td>
+    </tr>
+    <tr>
+        <td><strong>Faz Kayması ve Morfoloji Bozulması</strong></td>
+        <td>Sıfır (FiltFilt ile kompanze edilir, QRS bozulmaz)</td>
+        <td>Sıfır (Doğrusal faz karakteristiği)</td>
+        <td>Yüksek (ST çökmesini yanlış göstertebilir)</td>
+    </tr>
+    <tr>
+        <td><strong>Frekans Keskinliği (Roll-Off) ve Tasarım Esnekliği</strong></td>
+        <td>Mükemmel (Yazılımla istenildiği gibi güncellenir)</td>
+        <td>Çok İyi (Ancak tasarım zordur)</td>
+        <td>Kötü (Devre elemanı değiştirmek gerekir)</td>
+    </tr>
+</table>
+
+<h3>Teknik Alt Görev 2.1.2: Şebeke Gürültüsü İçin Dijital Notch Filtre Tasarımı</h3>
+<p>Ortamdaki alternatif akım şebekesinden (kablolar, prizler) hastanın vücuduna endüklenen elektromanyetik gürültü (Türkiye/Avrupa için 50 Hz), 40 Hz düşük geçiren filtreden kaçabilecek mikroskobik sızıntılara sebep olabilir. Bunu tamamen yok etmek için merkeze (center frequency) 50 Hz oturtulmuş, -40 dB sönümlemeli (attenuation) ve Q faktörü çok yüksek (dar bantlı) bir dijital IIR Notch (Çentik) filtresi kaskad mimarinin tam ortasına yerleştirilmiştir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Band-Stop yerine Dar Bant Notch?)</h3>
+<p>Geniş bir bant durduran (Band-Stop) filtre kullanmak (Örn: 48-52 Hz arasını kesmek), şebeke gürültüsünü yok ederken EKG sinyalinin içindeki hayati frekanslara da zarar verecektir. Dar bantlı bir Notch filtresinin seçilmesi (Q faktörünün >30 ayarlanması), frekans spektrumunda cerrahi bir kesik (sadece 49.5 - 50.5 Hz aralığı) açarak şebeke parazitini sıfırlarken komşu EKG verilerinin klinik anlamını korumayı garanti altına alır.</p>
+
+<h2>Alt Geniş Faaliyet 2.2: QRS Morfoloji Çıkarımı ve Ritim Analizi Algoritmaları</h2>
+<p>Filtreleme aşamasından geçen temiz sinyal üzerinden, kalbin mekanik kasılmasını temsil eden R dalgası tepelerinin (peak) ve atımlar arası mesafenin (R-R intervali) yüksek bir kesinlikle bulunması gerekmektedir. Kalp atım hızı (BPM) ve otonom sinir sistemi analizleri (HRV) bu R tepelerinin milisaniyelik zaman damgaları (timestamp) üzerine kurulacaktır.</p>
+
+<h3>Teknik Alt Görev 2.2.1: Geliştirilmiş Pan-Tompkins Algoritmasının Gömülü Kodlanması</h3>
+<p>Sinyalin birinci dereceden türevinin alınarak eğimlerin (QRS kompleksinin keskin yokuşu) tespit edilmesi, karesinin alınarak tüm değerlerin pozitif yapılıp düşük genlikli yavaş dalgaların (P ve T) baskılanması sağlanacaktır. Ardından ortalama QRS genişliğine uygun dinamik bir hareketli pencere integrali (Moving Window Integration) uygulanarak R tepesinin alanı maksimize edilecektir. Son aşamada ise, eşik değerin sabit kalmadığı, sinyalin Sinyal-Gürültü Oranına (SNR) göre otonom olarak kendini güncellediği Adaptif Eşikleme (Adaptive Thresholding) fonksiyonu çalışacaktır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Adaptif Eşiklemeli Pan-Tompkins?)</h3>
+<p>Sinyal işlemede tepe noktası bulmak için Sabit Eşikleme (Fixed Thresholding) veya Dalgacık Dönüşümü (Wavelet Transform) yöntemleri mevcuttur. Sabit eşikleme, hasta koştuğunda veya EKG genliği nefes almaya bağlı olarak düştüğünde tepeleri kaçırır (False Negative). Dalgacık dönüşümü (Wavelet) ise mükemmel sonuç verse de hesaplama karmaşıklığı O(N log N) seviyelerindedir ve giyilebilir bir ARM işlemciyi kilitler. Orijinal Pan-Tompkins literatürde O(N) karmaşıklığı ile en hafif algoritmalardan biridir; projemizde ona eklediğimiz "Adaptif Eşikleme" mekanizması ve "Geriye Dönük Arama (Search-Back)" özelliği sayesinde ise hata payı sıfıra yaklaşır. Ayrıca T-Dalgası Oversensing (Çift Sayma) problemini önlemek için, bir R tepesi bulunduktan sonraki 200 ms boyunca sistemi sağır eden (Blanking Period) algoritmik bir kalkan (maskeleme) koda eklenmiştir; bu sayede devasa T dalgalarına sahip Kalp Krizi (MI) hastalarında nabzın yanlışlıkla 2 kat (200 BPM) ölçülmesi mühendislik zekasıyla engellenmiştir.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: Geliştirilmiş Pan-Tompkins</th>
+        <th>Alternatif Yöntem 1: Dalgacık Dönüşümü (Wavelet Transform)</th>
+        <th>Alternatif Yöntem 2: Sabit Eşikli (Fixed) Türev Yöntemi</th>
+    </tr>
+    <tr>
+        <td><strong>Hareket Artefaktına (Motion) Direnç</strong></td>
+        <td>Çok Yüksek (Eşik kendini ortama adapte eder)</td>
+        <td>Mükemmel (Frekans analizi ile ayrıştırır)</td>
+        <td>Çok Düşük (Hasta hareket edince çöker)</td>
+    </tr>
+    <tr>
+        <td><strong>Hesaplama Karmaşıklığı (Edge CPU Yükü)</strong></td>
+        <td>Düşük (O(N) - Hafif matematiksel işlemler)</td>
+        <td>Çok Yüksek (Matris transformasyonları)</td>
+        <td>Çok Düşük</td>
+    </tr>
+    <tr>
+        <td><strong>T-Dalgası Oversensing (Çift Sayma) Koruması</strong></td>
+        <td>Var (Blanking Period / Körleme periyodu ile)</td>
+        <td>Var (Frekans bant ayrımı ile)</td>
+        <td>Yok (Yüksek T dalgasını R sanarak nabzı 2'ye katlar)</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 2: Başarı Kriterleri Tablosu</h2>
+<table>
+    <tr>
+        <th>Başarı Kriteri ve İncelenecek Metrik</th>
+        <th>Hedeflenen Değer</th>
+        <th>Ölçüm Gerekçesi / TEYDEB Etkisi</th>
+    </tr>
+    <tr>
+        <td><strong>Sinyal Gürültü Oranı (SNR) Artışı (İyileşme)</strong></td>
+        <td>> 25 dB</td>
+        <td>Filtreleme öncesi ham verinin gürültü genliği ile sonrasındaki sinyal kalitesi logaritmik olarak kanıtlanacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>R-Tepe Pozitif Yordama Değeri (PPV - Positive Predictive Value)</strong></td>
+        <td>≥ %99.5</td>
+        <td>Algoritmanın "bu bir kalp atışıdır" dediği dalgaların, uzman kardiyolog referansına göre gerçekten kalp atışı çıkma oranı.</td>
+    </tr>
+    <tr>
+        <td><strong>Nabız (BPM) Karesel Ortalama Hata (RMSE)</strong></td>
+        <td>< 2 BPM Hata</td>
+        <td>Cihazın hesapladığı nabız ile hastanedeki Altın Standart EKG'nin nabzı arasındaki maksimum sapma (hata payı).</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 2: Risk Yönetimi ve B Planı (Mitigasyon) Tablosu</h2>
+<table>
+    <tr>
+        <th>Olası Risk / Başarısızlık Senaryosu</th>
+        <th>Riskin Şiddeti</th>
+        <th>B Planı (Mitigasyon Stratejisi)</th>
+    </tr>
+    <tr>
+        <td><strong>Şiddetli Hareket (Motion Artifact) Altında Filtrenin Çökmesi</strong></td>
+        <td>Yüksek</td>
+        <td>Hasta yoğun efor (koşu bandı) halindeyken, statik IIR filtreler EKG sinyalini gürültüden ayıramayabilir. Bu risk gerçeğe dönüşürse, sistem SNR düşüşünü anlık olarak fark edecek ve yazılım otonom olarak "Uyarlamalı Gürültü İptali (Adaptive Noise Cancellation)" veya "LMS (Least Mean Squares)" filtre modlarına geçiş yaparak dinamik bir temizleme sağlayacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Algoritmanın Ekstrasistol (Erken Vuru - PVC) Dalgalarını Kaçırması</strong></td>
+        <td>Orta</td>
+        <td>Prematüre Ventriküler Kontraksiyon (PVC) dalgaları geniş ve düşük amplitüdlü olabilir. Pan-Tompkins bu geniş dalgayı gürültü sanıp atlayabilir. B Planı olarak; algoritmadaki entegrasyon penceresi (sliding window) sabit değil, hastanın geçmiş atım morfolojisine göre genişleyip daralabilen "Dinamik Pencere Boyutu (Dynamic Window Sizing)" tekniğine dönüştürülecektir.</td>
+    </tr>
+</table>
+
+<!-- IS PAKETI 3 -->
+<h1>İŞ PAKETİ 3 (İş Paketi Kodu: 103)</h1>
+<p><strong>İş Paketi Adı:</strong> Hibrit Derin Öğrenme Modeli (CNN-BiLSTM) ile EKG Anlamlandırması, Veri Dengeleme ve XAI ile Klinik Yorumlama<br>
+<strong>Başlama-Bitiş Tarihi ve Süresi:</strong> 7. Ay - 9. Ay (90 Gün)</p>
+
+<p><strong>1. İş Paketi Genel Kapsamı ve Amacı (Ana Anlatım):</strong> Projemizi mevcut standart Holter sistemlerinden ayırıp ileri seviye bir "Klinik Karar Destek Sistemine" dönüştüren asli Ar-Ge aşaması bu iş paketidir. Klasik cihazlar veriyi sadece hafıza kartına kaydederken, geliştirdiğimiz sistem dünyanın en prestijli kardiyoloji veri tabanları olan PhysioNet MIT-BIH Arrhythmia Database ve PTB-XL verileri kullanılarak eğitilmiş bir Derin Öğrenme (Deep Learning) beyni taşıyacaktır. EKG sinyallerinden 15 farklı klinik sınıfın (Normal, LBBB, RBBB, PVC, Kalp Krizi (MI), Atriyal Fibrilasyon (AF), İskemi, AV Bloklar vb.) ayırt edilmesi amaçlanmaktadır. Medikal veri setlerinde karşılaşılan en büyük problem olan "Veri Dengesizliği" (Class Imbalance - örneğin Normal atımların milyonlarca, AV Blok atımlarının ise binlerce olması) sorununu aşmak için projemizde SMOTE (Synthetic Minority Over-sampling Technique) kullanılarak azınlık sınıfı verileri sentetik olarak çoğaltılacaktır. Sınıflandırma mimarisi olarak, sinyalin uzamsal/morfolojik özelliklerini (QRS genişliği, P dalgası varlığı) öğrenmek için çok ölçekli 1D-CNN (Convolutional Neural Network), sinyalin zamansal akışını ve önceki kalp atımlarıyla ilişkisini öğrenmek için ise BiLSTM (Bidirectional Long Short-Term Memory) kullanılacaktır. Tıp dünyasında doktorların yapay zekaya (Kara Kutu - Black Box olduğu için) güvenmeme sorununu çözmek adına Açıklanabilir Yapay Zeka (Explainable AI - XAI) teknolojisi devreye sokulacaktır. Grad-CAM (Gradient-weighted Class Activation Mapping) mekanizması sayesinde, modelin AF veya MI tanısı koyduğu durumlarda, karar sürecini tetikleyen EKG bölgesi (Örneğin: P dalgasının yokluğu veya ST segmentindeki çökme) EKG grafiği üzerinde kırmızı bir Isı Haritası (Heatmap) ile vurgulanarak hekimin klinik yorumlama (diagnostic evaluation) yapması sağlanacaktır.</p>
+
+<h2>Alt Geniş Faaliyet 3.1: Medikal Veri Seti Optimizasyonu ve Sentetik Veri Dengeleme</h2>
+<p>Derin öğrenme algoritmalarının başarısı, beslendikleri verinin kalitesine ve homojenliğine bağlıdır. PTB-XL gibi açık erişimli devasa kardiyoloji veri tabanlarında, "Normal Sinüs Ritmi" sınıfındaki hasta sayısı milyonları bulurken, ölümcül ancak nadir görülen aritmilerin (Örn: Ventriküler Taşikardi - VT) örnek sayısı birkaç bin seviyesindedir. Modelin çoğunluk sınıfına (Normal) doğru eğilim göstermesini (Bias) engellemek için, matematiksel veri artırımı işlemleri hayati önem taşır.</p>
+
+<h3>Teknik Alt Görev 3.1.1: SMOTE (Synthetic Minority Over-sampling Technique) ile Sentetik Veri Üretimi</h3>
+<p>Veri dengesizliği sorununu çözmek için, K-En Yakın Komşu (K-NN) algoritması mantığına dayanan SMOTE metodu uygulanacaktır. Bu yöntem, nadir sınıflardaki EKG dalgalarını basitçe kopyalamak yerine, n boyutlu öklid uzayında (özellik uzayında) iki komşu hasta verisi arasına yeni, sentetik ve tamamen gerçeğe uygun EKG morfolojileri yerleştirir. Böylece eğitim verisinde her bir hastalık sınıfı (15 sınıf) sayıca birbirine eşitlenir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden SMOTE?)</h3>
+<p>Makine öğrenmesinde dengesiz sınıfları çözmek için azınlık verileri kopyalama (Random Oversampling) veya çoğunluk verilerini silme (Random Undersampling) yöntemleri sıkça kullanılır. Çoğunluğu silmek (Undersampling), modelin değerli kardiyak varyasyonları öğrenmesini engeller ve "Underfitting" yaratır. Azınlığı kopyalamak (Oversampling) ise modelin aynı hasta verisini binlerce kez görerek o hastayı tamamen ezberlemesine (Overfitting) yol açar. SMOTE tekniğinin seçilme gerekçesi; modelin eğitim sırasında daha önce hiç var olmayan ancak istatistiksel ve fizyolojik olarak mükemmel derecede doğru olan "yepyeni sentetik hastalar" görerek gerçek dünya genelleştirmesini (Generalization) kusursuz yapmasını sağlamaktır.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: SMOTE Algoritması</th>
+        <th>Alternatif Yöntem 1: Random Oversampling (Kopyalama)</th>
+        <th>Alternatif Yöntem 2: Random Undersampling (Silme)</th>
+    </tr>
+    <tr>
+        <td><strong>Modelin Ezberleme (Overfitting) Riski</strong></td>
+        <td>Çok Düşük (Sürekli yeni/farklı veri üretir)</td>
+        <td>Aşırı Yüksek (Aynı veriyi binlerce kez gösterir)</td>
+        <td>Düşük (Ancak model cahil kalır)</td>
+    </tr>
+    <tr>
+        <td><strong>Klinik Varyasyonları Öğrenme Kapasitesi</strong></td>
+        <td>Mükemmel (Uzayda yeni morfolojiler keşfeder)</td>
+        <td>Kötü (Sadece mevcut veriyi ezberler)</td>
+        <td>Çok Kötü (Veri kaybı yaşanır)</td>
+    </tr>
+</table>
+
+<h2>Alt Geniş Faaliyet 3.2: Otonom Teşhis ve Hibrit Derin Öğrenme Mimarisi</h2>
+<p>Klasik tıbbi cihazlar if-else kurallarına dayanarak (Örn: R-R aralığı 1 saniyeden uzunsa Bradikardi yaz) çalışır. Bu yapı, atipik hastalarda sürekli yanlış alarm üretir. Projemizde inşa edilecek algoritma, EKG sinyalinden kendi özelliklerini çıkaracak (Feature Extraction) ve hastanın "Kendi Normalini (Bazal Ritmini)" transfer öğrenme (Transfer Learning) ile kavrayacak bir derin sinir ağı olacaktır.</p>
+
+<h3>Teknik Alt Görev 3.2.1: Multi-Scale 1D-CNN ve BiLSTM Mimarisi Tasarımı</h3>
+<p>Modelin ilk katmanlarında yer alan Bir Boyutlu Evrişimli Sinir Ağları (1D-CNN), farklı kernel (filtre) boyutlarına sahip "Multi-Scale" bir mimaride tasarlanacaktır. Küçük kerneller dar QRS kompleksini, büyük kerneller ise geniş T dalgalarını tarayarak uzamsal (morfolojik) bozuklukları yakalayacaktır. CNN'den çıkan bu öznitelik haritaları, çift yönlü zaman serisi ağları olan BiLSTM katmanlarına beslenecektir. BiLSTM, hastanın şu anki EKG atımını değerlendirirken, hem önceki 10 atımı hem de sonraki 10 atımı matematiksel hücrelerinde hatırlayarak (Temporal Memory) aralarındaki ritmik ilişkiyi analiz edecektir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Hibrit 1D-CNN + BiLSTM?)</h3>
+<p>Kardiyoloji literatüründe kalp hastalıkları ikiye ayrılır: Şekil bozuklukları (Örn: Kalp Krizi - ST çökmesi) ve Ritim bozuklukları (Örn: Atriyal Fibrilasyon). Sadece Destek Vektör Makineleri (SVM) veya Random Forest gibi geleneksel algoritmalar kullanılsaydı, özelliklerin (Örn: QRS genişliği) mühendisler tarafından kodla (manuel) çıkarılması gerekecekti ki bu milyarlarca farklı EKG varyasyonunda imkansızdır. Otonom olan saf 2D-CNN (ResNet vb.) mimariler ise sadece resmin (anlık şeklin) analizini yapar; bir önceki kalp atışının ne zaman gerçekleştiğini unutur (Hafızası yoktur). Atriyal Fibrilasyon gibi ritimsizlik hastalıkları tamamen ardışık atımların (R-R) zamansal hafızasına ihtiyaç duyar. Seçtiğimiz hibrit mimari; 1D-CNN ile EKG'nin "Mükemmel Fotoğrafını" çekerken, BiLSTM ile bu fotoğrafları birleştirip "Mükemmel bir Film (Zaman Serisi)" haline getirerek hem şekil hem ritim analizinde %95'in üzerinde tıbbi doğruluğa (Accuracy) ulaşmamızı sağlayan yegane yapıdır.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: 1D-CNN + BiLSTM (Hibrit)</th>
+        <th>Alternatif Yöntem 1: Geleneksel Makine Öğrenmesi (SVM / Random Forest)</th>
+        <th>Alternatif Yöntem 2: Saf Derin Öğrenme (2D-CNN / ResNet)</th>
+    </tr>
+    <tr>
+        <td><strong>Özellik Çıkarımı (Feature Engineering)</strong></td>
+        <td>Otonom (Ham EKG verisinden kendi kurallarını bulur)</td>
+        <td>Manuel (Mühendisin kodla özellik vermesi zorunludur)</td>
+        <td>Otonom</td>
+    </tr>
+    <tr>
+        <td><strong>Zamansal Hafıza (Ritim Analizi)</strong></td>
+        <td>Var (BiLSTM ile geçmiş ve gelecek atımları hatırlar)</td>
+        <td>Yok (Her atımı bağımsız ve anlık değerlendirir)</td>
+        <td>Yok (Sadece şekil bozukluğunu tanır, ritmi kaçırır)</td>
+    </tr>
+    <tr>
+        <td><strong>Genel Klinik Doğruluk (Accuracy)</strong></td>
+        <td>Çok Yüksek (>%95)</td>
+        <td>Orta/Yüksek (~%80 - Veri büyüdükçe tıkanır)</td>
+        <td>Yüksek (~%90 - Ancak aritmilerde çöker)</td>
+    </tr>
+</table>
+
+<h2>Alt Geniş Faaliyet 3.3: Açıklanabilir Yapay Zeka (XAI) ve Hekim Güveni</h2>
+<p>Medikal yapay zeka projelerinin sahada (hastanelerde) başarısız olmasının en temel sebebi, hekimlerin "Kara Kutu (Black Box)" olarak adlandırılan AI kararlarına güvenmemesidir. Bir AI "Bu hastada Kalp Krizi (MI) var" dediğinde, hekim bunun nedenini grafik üzerinde gözleriyle görmek ister. Bu sosyolojik ve klinik bariyeri aşmak için sisteme Açıklanabilir Yapay Zeka modülü entegre edilecektir.</p>
+
+<h3>Teknik Alt Görev 3.3.1: Grad-CAM (Gradient-weighted Class Activation Mapping) Isı Haritalaması</h3>
+<p>CNN katmanlarındaki son konvolüsyon ağırlıkları geri yayılım (Backpropagation) gradyanlarıyla çarpılarak, yapay zekanın 15 sınıf içinden teşhis koyarken EKG grafiğinin tam olarak hangi milimetrik noktasına (Attention) odaklandığı hesaplanacaktır. Bulunan odak noktası (Örn: Yükselmiş bir ST segmenti), hekimin ekranındaki EKG çizgisinin üzerine "Kırmızı Isı Haritası (Heatmap)" şeklinde renklendirilerek bindirilecektir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Grad-CAM?)</h3>
+<p>Yapay zekanın karar sürecini açıklamak için LIME veya SHAP gibi feature-importance yöntemleri kullanılabilir. Ancak LIME ve SHAP, zaman serisi (1D) verilerinde istatistiksel tablo ve sayılar üretir. Hekimler sayılarla değil, grafiksel morfolojiyle tanı koymaya alışkındır. Grad-CAM'in seçilmesinin temel gerekçesi, matematiksel gradyan hesaplarını doğrudan EKG sinyalinin geometrik üzerine (görsel uzaya) izdüşümleyerek tam olarak "işte buradaki bozulmadan dolayı kriz tanısı koydum" şeklinde doğrudan tıbbi kanıt sunabilmesidir.</p>
+
+<h2>İş Paketi 3: Başarı Kriterleri Tablosu</h2>
+<table>
+    <tr>
+        <th>Başarı Kriteri ve İncelenecek Metrik</th>
+        <th>Hedeflenen Değer</th>
+        <th>Ölçüm Gerekçesi / TEYDEB Etkisi</th>
+    </tr>
+    <tr>
+        <td><strong>Duyarlılık (Sensitivity / Recall - True Positive Rate)</strong></td>
+        <td>≥ %97</td>
+        <td>Sistemin hasta olan bireylerin kaçını doğru yakaladığı. (Tıbbi tanıda en kritik metriktir, hasta olanı kaçırmamak (False Negative=0) zorunludur).</td>
+    </tr>
+    <tr>
+        <td><strong>Özgüllük (Specificity - True Negative Rate)</strong></td>
+        <td>≥ %90</td>
+        <td>Sistemin sağlıklı bireylere yanlışlıkla alarm verip vermeme (False Positive minimizasyonu) yeteneği. Hastane paniklerini önler.</td>
+    </tr>
+    <tr>
+        <td><strong>Makro F1-Score (Harmonik Ortalama)</strong></td>
+        <td>≥ %92</td>
+        <td>15 farklı sınıf arasındaki başarımın harmonik ortalaması. Milyonlarca normal, beş tane kriz atımı varken bile modelin ezber yapmadığını TEYDEB hakemlerine kanıtlayan yegane metriktir.</td>
+    </tr>
+    <tr>
+        <td><strong>AI Güven Skoru (Confidence Interval)</strong></td>
+        <td>Raporlanabilir Değer</td>
+        <td>Softmax katmanından çıkan ve yapay zekanın ürettiği karardan matematiksel olarak % kaç emin olduğunu gösteren olasılık değeri. Hekim kararını destekler.</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 3: Risk Yönetimi ve B Planı (Mitigasyon) Tablosu</h2>
+<table>
+    <tr>
+        <th>Olası Risk / Başarısızlık Senaryosu</th>
+        <th>Riskin Şiddeti</th>
+        <th>B Planı (Mitigasyon Stratejisi)</th>
+    </tr>
+    <tr>
+        <td><strong>Modelin Eğitim Verisini Ezberlemesi (Overfitting)</strong></td>
+        <td>Kritik (Çok Yüksek)</td>
+        <td>Eğer K-Fold Çapraz Doğrulama (Cross-Validation) testlerinde eğitim doğruluğu %99, gerçek hasta (unseen data) doğruluğu %65 ise model ezberlemiş demektir. Derhal model mimarisine müdahale edilerek L2 Regularization (Ağırlık cezalandırma) katsayısı artırılacak ve nöron ağlarına %30 ile %50 arasında Dropout (rastgele nöron kapatma) katmanları eklenerek modelin ezber yeteneği kasten körleştirilecek, genelleştirme yapması zorlanacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Nadir Aritmilerde Başarımın (F1-Score) Çok Düşük Kalması</strong></td>
+        <td>Yüksek</td>
+        <td>SMOTE ile veri artırımı yapılmasına rağmen model bazı karmaşık aritmileri (Örn: Atriyal Flutter) ayırt edemiyorsa; standart Cross-Entropy hata fonksiyonu yerine bilgisayarlı görüde kullanılan "Focal Loss" fonksiyonuna geçiş yapılacaktır. Focal loss, modelin kolay bildiği sınıflara (Normal) verdiği ağırlığı sıfıra indirirken, sürekli yanlış bildiği zor sınıflara devasa cezalar uygulayarak algoritmayı zoraki öğretecektir.</td>
+    </tr>
+</table>
+
+<!-- IS PAKETI 4 -->
+<h1>İŞ PAKETİ 4 (İş Paketi Kodu: 104)</h1>
+<p><strong>İş Paketi Adı:</strong> Dijital Sağlık Platformunun (Web Dashboard) Geliştirilmesi, Canlı Veri Akışı ve Nihai Karar Destek Arayüzü<br>
+<strong>Başlama-Bitiş Tarihi ve Süresi:</strong> 10. Ay - 12. Ay (90 Gün)</p>
+
+<p><strong>1. İş Paketi Genel Kapsamı ve Amacı (Ana Anlatım):</strong> Projenin donanım, sinyal işleme ve yapay zeka aşamalarının tamamlanmasının ardından elde edilen milyonlarca veri noktasının, sağlık profesyonellerine (Hekim/Hemşire) saniyeler içinde anlaşılabilecek, güvenilir ve ergonomik bir formatta sunulması gerekmektedir. Bu iş paketi kapsamında, kullanıcı dostu bir "Klinik Karar Destek Arayüzü" geliştirilecektir. Frontend (Ön-yüz) kısmında yüksek hızlı rendering kapasitesine sahip ReactJS kütüphanesi kullanılacaktır. Arka planda (Backend) ise asenkron veri akışını yönetebilen Python FastAPI mimarisi kurulacaktır. Cihazdan toplanıp işlenen veriler, WebSockets (Çift yönlü tam zamanlı iletişim) protokolü kullanılarak saniyede en az 30 kare (30 FPS) güncellemeyle canlı bir tıbbi osiloskop (EKG Monitor) ekranına dökecektir. Ekranda sadece çizgi grafik değil; yapay zekanın o an tespit ettiği Anlık Nabız (BPM), PQRST morfoloji değerleri, R-R değişkenliği (HRV) ve 15 hastalığın anlık % teşhis olasılıkları da gösterilecektir. Raporlama modülü sayesinde, seçilen zaman aralığındaki anormal atımlar PDF formatında "Doktor Teşhis Raporu" olarak çıktı verilebilecektir.</p>
+
+<h2>Alt Geniş Faaliyet 4.1: Gerçek Zamanlı Veri Akışı ve Bulut (Cloud) Backend Mimarisi</h2>
+<p>Sensörden çıkan verinin şifrelenerek, gecikmesiz bir şekilde bulut sunuculara ulaşması ve oradan da hekimin izlediği web paneline milisaniyeler içinde yansıması projenin son kullanıcı (doktor) tarafındaki kabulünü belirler. Veri trafiği, klasik web uygulamalarından çok daha yoğundur.</p>
+
+<h3>Teknik Alt Görev 4.1.1: Python FastAPI ve WebSockets Entegrasyonu</h3>
+<p>Arka uç (Backend) sunucusunda, saniyede yüzlerce asenkron I/O işlemi yapabilme yeteneğine sahip Python FastAPI çerçevesi kullanılacaktır. İstemci (Doktorun Tarayıcısı) ile sunucu arasında tek seferlik değil, daimi açık kalan çift yönlü bir TCP bağlantısı tüneli oluşturmak amacıyla WebSockets protokolü implemente edilecektir. Bulut ortamında işlenen EKG verileri ve AI teşhis sonuçları bu tünelden aralıksız olarak akacaktır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden FastAPI ve WebSockets?)</h3>
+<p>Klasik tıbbi yazılımlarda ve standart web projelerinde sıklıkla HTTP RESTful API (Request-Response) protokolü kullanılır. REST mimarisinde istemci (tarayıcı) her yeni veri için sunucuya sormak (Polling) zorundadır. Saniyede 360 paketin geldiği bir EKG sisteminde, REST kullanmak sunucunun her milisaniyede bağlantı (Handshake) kurup kapatmasına, devasa bir veri gecikmesine (Lag) ve sunucunun kilitlenmesine yol açar. "WebSockets" protokolünün seçilme gerekçesi, bağlantıyı bir kez kurup sürekli açık tutarak HTTP başlık (header) yükünü (overhead) ortadan kaldırması ve veriyi anlık osiloskop akışkanlığında (30 FPS) ekrana dökmesidir. Backend çatısı olarak Flask veya Django yerine FastAPI seçilmesinin mühendislik gerekçesi ise; FastAPI'nin Uvicorn ve ASGI (Asynchronous Server Gateway Interface) altyapısı sayesinde gelen verileri bloklamadan (Non-blocking) eşzamanlı olarak işleyerek geleneksel framework'lere kıyasla 3 kat daha yüksek veri hacmini yönetebilmesidir.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: WebSockets (WSS) + FastAPI</th>
+        <th>Alternatif Yöntem 1: HTTP RESTful API (Polling)</th>
+        <th>Alternatif Yöntem 2: MQTT Protokolü</th>
+    </tr>
+    <tr>
+        <td><strong>Veri İletim Gecikmesi (Overhead)</strong></td>
+        <td>Çok Düşük (Sürekli açık tünel, başlık yükü yok)</td>
+        <td>Çok Yüksek (Her veride yeniden bağlanma yükü)</td>
+        <td>Düşük (IoT için harika ancak web tarayıcı desteği zayıf)</td>
+    </tr>
+    <tr>
+        <td><strong>Eşzamanlı (Asenkron) Bağlantı Kapasitesi</strong></td>
+        <td>Mükemmel (Binlerce hastayı aynı anda destekler)</td>
+        <td>Düşük (Thread kilitlenmeleri yaşanır)</td>
+        <td>Mükemmel</td>
+    </tr>
+    <tr>
+        <td><strong>Canlı Arayüz (Osiloskop) Uygunluğu</strong></td>
+        <td>Tam Uyumlu (Kesintisiz 30 FPS çizim sağlar)</td>
+        <td>Uyumsuz (Grafik sürekli takılır ve atlar)</td>
+        <td>Kısmi Uyumlu (Ekstra broker yazılımı gerektirir)</td>
+    </tr>
+</table>
+
+<h2>Alt Geniş Faaliyet 4.2: Nihai Karar Destek Arayüzü ve Frontend Geliştirimi</h2>
+<p>Hekimlerin veriyi analiz edeceği ekranın, yüz binlerce nokta içeren EKG çizgi grafiğini tarayıcı (browser) çökmeden çizebilmesi gerekir. Raporlama, PDF çıktısı alma ve yapay zeka ısı haritalarını (Grad-CAM) gösterme fonksiyonları bu arayüzde birleştirilecektir.</p>
+
+<h3>Teknik Alt Görev 4.2.1: ReactJS ile Donanım Hızlandırmalı (Canvas) Rendering</h3>
+<p>Kullanıcı arayüzü, bileşen tabanlı (Component-based) mimarisi olan ReactJS kütüphanesi ile inşa edilecektir. Ancak, saniyede akan 360 verinin standart HTML DOM (Document Object Model) elementleri ile çizdirilmesi (SVG vb.) tarayıcıyı donduracaktır. Bu nedenle veri görselleştirmesi, ekran kartını (GPU) doğrudan kullanan HTML5 Canvas API ve WebGL tabanlı özel grafik kütüphaneleri (Örn: Chart.js veya Apache ECharts) ile entegre edilecektir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden ReactJS ve Canvas Rendering?)</h3>
+<p>Eğer EKG çizgileri geleneksel JavaScript ve SVG (Scalable Vector Graphics) ile tarayıcıya çizdirilseydi, ekrandaki her yeni EKG veri noktası tarayıcının tüm sayfayı yeniden hesaplamasına (Reflow / Repaint) neden olacaktı. 30 saniyelik bir veride (yaklaşık 10.800 nokta) Chrome veya Safari saniyeler içinde kilitlenecektir. ReactJS'in "Sanal DOM (Virtual DOM)" yapısı sadece ekranda değişmesi gereken noktayı günceller. Çizim mimarisi olarak SVG yerine "Canvas" teknolojisinin seçilme gerekçesi ise; Canvas'ın her noktayı bir obje olarak hafızada tutmak yerine, donanımsal olarak ekrandaki piksellerin rengini değiştirerek 1 Milyon veri noktasını bile 60 FPS (kare/saniye) hızında sıfır takılmayla render edebilmesidir (Donanım Hızlandırması / GPU Acceleration).</p>
+
+
+<h2>Alt Geniş Faaliyet 4.3: Siber Güvenlik, Uçtan Uca Şifreleme ve KVKK/GDPR Uyumluluğu</h2>
+<p>Kardiyak EKG verileri ve yapay zeka teşhis sonuçları, yasal olarak "Özel Nitelikli Kişisel Sağlık Verisi" statüsündedir. Bu verilerin donanımdan buluta, buluttan ise hekimin web paneline aktarılması sırasında siber saldırılara (Man-in-the-Middle, Packet Sniffing vb.) maruz kalmasını engellemek projenin yasal ve etik önkoşuludur. Ayrıca, verilerin bulut sunucularında tutulması sürecinde KVKK (Türkiye) ve GDPR (Avrupa Birliği) regülasyonlarına tam uyum sağlanması zorunludur.</p>
+
+<h3>Teknik Alt Görev 4.3.1: AES-256 Uçtan Uca Şifreleme (End-to-End Encryption) ve Veri Anonimleştirme (Data Anonymization)</h3>
+<p>Veriler henüz cihazın içindeki STM32 mikrodenetleyicisindeyken (donanım seviyesinde) AES-256 (Advanced Encryption Standard) algoritması ile şifrelenecektir. Ayrıca hasta kimlik verileri (Ad, Soyad, TC Kimlik vb.) EKG verisinden tamamen koparılarak ayrı bir veritabanında tutulacak; EKG verileri ise bulutta sadece rastgele üretilmiş UUID (Universally Unique Identifier) kodları ile işlenecektir (Anonimleştirme / Pseudonymization). WebSockets üzerinden akan canlı veri de TLS 1.3 (Transport Layer Security) tüneli içinden geçirilecektir.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden AES-256 ve UUID Tabanlı Anonimleştirme?)</h3>
+<p>Medikal IoT projelerinde sıklıkla yapılan en büyük hata, veriyi sadece iletişim sırasında şifrelemek (Örn: Sadece HTTPS/TLS kullanmak) ve bulutta (Data at Rest) şifresiz tutmaktır. Eğer bulut sunucusu siber saldırıya uğrarsa, hastaların tüm kalp verileri açığa çıkar. Projemizde seçilen AES-256 şifreleme ve UUID ayırma yöntemi sayesinde, bir hacker EKG veritabanını ele geçirse bile, verilerin hangi hastaya ait olduğunu bilemeyecek (kimliksiz veri) ve veriler şifreli olduğu için anlamlandıramayacaktır. Bu mimari, Sağlık Bakanlığı ve uluslararası MDR kurullarının istediği nihai veri güvenliği standardıdır.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: Uçtan Uca (E2E) AES-256 + TLS 1.3 + UUID Anonimleştirme</th>
+        <th>Alternatif Yöntem 1: Sadece İletişim Şifrelemesi (HTTPS/TLS)</th>
+        <th>Alternatif Yöntem 2: Şifresiz Doğrudan Aktarım</th>
+    </tr>
+    <tr>
+        <td><strong>Kişisel Sağlık Verisi (KVKK/GDPR) İhlal Riski</strong></td>
+        <td>Sıfır (Veri cihazda şifrelenir, kimliksizdir)</td>
+        <td>Çok Yüksek (Sunucu hacklenirse tüm veri sızar)</td>
+        <td>Facia (Ağ dinlemesiyle veriler çalınır)</td>
+    </tr>
+    <tr>
+        <td><strong>Sunucu Kaynaklı Veri Sızıntısı (Data Breach at Rest)</strong></td>
+        <td>Korunur (Veri bulutta da şifrelidir)</td>
+        <td>Korunamaz (Veri bulutta açık metin durur)</td>
+        <td>Korunamaz</td>
+    </tr>
+    <tr>
+        <td><strong>Mikrodenetleyiciye (Edge) Binen Şifreleme Yükü</strong></td>
+        <td>Yüksek (Donanımsal kripto hızlandırıcı gerektirir)</td>
+        <td>Düşük</td>
+        <td>Yok</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 4: Başarı Kriterleri Tablosu</h2>
+<table>
+    <tr>
+        <th>Başarı Kriteri ve İncelenecek Metrik</th>
+        <th>Hedeflenen Değer</th>
+        <th>Ölçüm Gerekçesi / TEYDEB Etkisi</th>
+    </tr>
+    <tr>
+        <td><strong>Uçtan Uca Sistem Gecikmesi (System Latency)</strong></td>
+        <td>< 1 Saniye</td>
+        <td>Cihazdaki sensörün kalp atışını algıladığı an ile doktorun bilgisayar ekranında grafiğin ve AI tanısının belirdiği an arasındaki zaman farkı.</td>
+    </tr>
+    <tr>
+        <td><strong>Arayüz Tazeleme ve Rendering Hızı (Frame Rate)</strong></td>
+        <td>≥ 30 FPS</td>
+        <td>Hastane osiloskoplarının standart medikal ekran akıcılığını (stuttering olmadan) web tarayıcısında birebir sağlamak.</td>
+    </tr>
+    <tr>
+        <td><strong>Siber Saldırı / Sızma Testi (Penetration Test)</strong></td>
+        <td>0 (Sıfır) Zafiyet</td>
+        <td>Sistemin ağ trafiği dinlendiğinde (Sniffing), AES-256 ve TLS 1.3 sayesinde içeriğin kırılamaz olduğunun siber güvenlik uzmanlarınca raporlanması.</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 4: Risk Yönetimi ve B Planı (Mitigasyon) Tablosu</h2>
+<table>
+    <tr>
+        <th>Olası Risk / Başarısızlık Senaryosu</th>
+        <th>Riskin Şiddeti</th>
+        <th>B Planı (Mitigasyon Stratejisi)</th>
+    </tr>
+    <tr>
+        <td><strong>Kritik İnternet Kopması / Sunucu Çökmesi</strong></td>
+        <td>Kritik (Yüksek)</td>
+        <td>Hastanın cihazı ile AWS bulut sunucuları arasındaki bağlantı koptuğunda, hekim ekranı veri alamayacaktır. Sistem böyle bir durumda derhal "Yerel Mod'a (Local Fallback)" geçecektir. İnternet yokluğunda cihaz kendi içindeki SD Karta yazmaya devam edecek ve cihaz içindeki temel kural-tabanlı gömülü kodlar (Örn: Nabız 40'ın altı ise) Bluetooth üzerinden hastanın telefonuna direkt acil sesli SMS/Alarm tetikleyecektir. İnternet geldiğinde eksik paketler buluta (senkronizasyon) aktarılacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Kriptografik Algoritmaların İşlemciyi Kilitmesi (AES Overhead)</strong></td>
+        <td>Orta</td>
+        <td>AES-256 şifreleme algoritması, 360 Hz veri akışında mikrodenetleyiciyi zorlayabilir. B planı olarak, cihazın içindeki mikrodenetleyicide donanımsal kripto hızlandırıcı (Hardware Cryptographic Accelerator - HASH/RNG/CRYP donanım bloğu) barındıran STM32F4 serisi çiplere geçiş yapılarak CPU yükü %1 seviyelerine düşürülecektir.</td>
+    </tr>
+</table>
+
+<!-- IS PAKETI 5 -->
+<h1>İŞ PAKETİ 5 (İş Paketi Kodu: 105)</h1>
+<p><strong>İş Paketi Adı:</strong> Sistem Entegrasyonu, Klinik Araştırmalar, Performans Doğrulaması ve Belgelendirme Süreçleri<br>
+<strong>Başlama-Bitiş Tarihi ve Süresi:</strong> 11. Ay - 12. Ay (60 Gün)</p>
+
+<p><strong>1. İş Paketi Genel Kapsamı ve Amacı (Ana Anlatım):</strong> Projenin donanım (Cihaz/Sensör), sinyal işleme (Gömülü Yazılım), yapay zeka (Karar Destek) ve arayüz (Dashboard) adımları tamamlandıktan sonra, tüm bu ayrı birimlerin tek ve kompakt bir "Medikal Sistem" olarak çalışıp çalışmadığının uçtan uca (end-to-end) doğrulanması gerekmektedir. 5. İş Paketinin temel amacı, üretilen prototipin klinik geçerliliğinin, elektriksel güvenliğinin ve mevzuatsal (TİTCK / MDR) uygunluğunun kanıtlanmasıdır. Bu aşamada üniversite hastaneleri ile iş birliği yapılarak etik kurul onaylı pilot klinik testler başlatılacaktır. Cihazın ürettiği veriler ve yapay zeka tanıları, hastanedeki standart (referans) Holter cihazları ile eş zamanlı karşılaştırılarak (Bland-Altman Analizi gibi istatistiksel yöntemlerle) valide edilecektir. Başarılı geçen klinik süreçlerin ardından, ürünün ruhsatlandırılması ve pazara sürülebilmesi (THS 7 ve THS 8 seviyelerine ulaşması) için teknik dosya hazırlıkları ve akredite kuruluşlarla uygunluk değerlendirme faaliyetleri tamamlanacaktır.</p>
+
+<h2>Alt Geniş Faaliyet 5.1: Prototip Sistem Entegrasyonu ve Stres Testleri</h2>
+<p>Geliştirilen birbirinden bağımsız mühendislik modüllerinin (Donanım + Gömülü Yazılım + AI + Bulut) birleştirilerek (System Integration) üretim adayı (Release Candidate) nihai prototipin elde edilmesi gerekmektedir. Prototip, laboratuvar ortamında yapay gürültüler (Simülatör) ve yüksek veri akışı altında stres testlerine tabi tutulacaktır.</p>
+
+<h3>Teknik Alt Görev 5.1.1: Uçtan Uca (End-to-End) Veri Tıkanıklığı (Bottleneck) ve Crash Analizi</h3>
+<p>Cihaz laboratuvar ortamında bir EKG simülatörüne (Örn: Fluke ProSim) bağlanarak, farklı kalp ritimlerinde ve gürültü profillerinde 72 saat boyunca kesintisiz çalıştırılacaktır. Amaç, donanımsal SRAM'in (belleğin) şişip şişmediğini (Memory Leak), SD karta veri yazarken veya WebSockets üzerinden buluta veri basarken sistemin kilitlenip (Crash) kilitlenmediğini gözlemlemektir.</p>
+
+<h2>Alt Geniş Faaliyet 5.2: Klinik Doğrulama ve İstatistiksel Karşılaştırma</h2>
+<p>Laboratuvardan başarıyla çıkan cihazın, gerçek insan denekleri (hastalar) üzerinde mevzuatsal etik kurul (Clinical Ethics Committee) onayı alınarak test edilmesi TEYDEB'in ticari başarı hedefleri (THS 8) açısından son aşamadır.</p>
+
+<h3>Teknik Alt Görev 5.2.1: Bland-Altman Analizi ile Tıbbi Validasyon</h3>
+<p>Aynı hastaya eşzamanlı olarak hem projemizde geliştirdiğimiz "Lifeline Giyilebilir EKG Cihazı" hem de hastanedeki kalibre edilmiş, CE belgeli "Altın Standart (Gold Standard) Referans Holter Cihazı" bağlanacaktır. İki cihazdan da eş zamanlı olarak alınan Nabız (BPM) ve QRS morfoloji verileri Bland-Altman analizi ile istatistiksel olarak kıyaslanacaktır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Bland-Altman Analizi?)</h3>
+<p>Mühendislik testlerinde genellikle basit "Korelasyon (Pearson)" veya "Mutlak Hata (Absolute Error)" yöntemleri kullanılır. Ancak medikal cihaz onaylama (Validasyon) süreçlerinde ve FDA / CE başvuru dosyalarında basit korelasyon kabul görmez. Çünkü iki cihazın aynı oranda yanlış yapması da yüksek korelasyon verir. Bland-Altman analizinin seçilme gerekçesi; iki cihaz arasındaki "Sistematik Sapmayı (Bias)" yani cihazlardan birinin sürekli daha yüksek veya daha düşük ölçme eğilimini (Calibration Error) matematiksel olarak ortaya koymasıdır. Ayrıca cihaz ölçümlerinin %95 Güven Aralığı (±1.96 Standart Sapma - Limits of Agreement) içinde kalıp kalmadığı grafiksel olarak kanıtlanarak projenin klinik rüşdünü mutlak surette ispatlar.</p>
+
+<table>
+    <tr>
+        <th>Parametre / Karşılaştırma Kriteri</th>
+        <th>Seçilen Yöntem: Bland-Altman İstatistiksel Analizi</th>
+        <th>Alternatif Yöntem 1: Pearson Korelasyon Katsayısı</th>
+        <th>Alternatif Yöntem 2: Ortalama Mutlak Hata (MAE)</th>
+    </tr>
+    <tr>
+        <td><strong>Klinik Geçerlilik ve MDR Onayı</strong></td>
+        <td>Kesinlikle Zorunlu (Altın Standart)</td>
+        <td>Yetersiz (Sadece eğilim gösterir)</td>
+        <td>Yetersiz (Sistematik hatayı gizler)</td>
+    </tr>
+    <tr>
+        <td><strong>Sistematik Sapma (Bias) Gösterimi</strong></td>
+        <td>Var (Hangi cihazın ne kadar saptığını net gösterir)</td>
+        <td>Yok</td>
+        <td>Yok</td>
+    </tr>
+    <tr>
+        <td><strong>Güven Aralıkları (Limits of Agreement)</strong></td>
+        <td>Hesaplar (Tıbbi güvenilirlik sınırları çizer)</td>
+        <td>Yok</td>
+        <td>Yok</td>
+    </tr>
+</table>
+
+<h2>Alt Geniş Faaliyet 5.3: Kalite Yönetimi ve Medikal Belgelendirme (CE) Hazırlığı</h2>
+<p>Proje çıktısının sadece çalışan bir prototip değil, "Ticarileşebilir Tıbbi Cihaz" statüsüne geçmesi için yasal zorunlulukların yerine getirilmesi gerekir.</p>
+
+<h3>Teknik Alt Görev 5.3.1: IEC 60601-1 Elektriksel Güvenlik Testleri ve Risk Analizi</h3>
+<p>Giyilebilir EKG cihazları, hastanın kalbine çok yakın mesafede cilde doğrudan temas (Elektrotlar vasıtasıyla) eden cihazlardır (Applied Part Type BF veya CF). IEC 60601-1 standartları uyarınca, akredite bir laboratuvarda cihazın Kaçak Akım (Leakage Current), Dielektrik Dayanım ve İzolasyon (Optokuplör) testleri yapılacaktır. Eşzamanlı olarak ISO 14971 Medikal Cihazlar Risk Yönetimi dosyası hazırlanacaktır.</p>
+
+<h3>Yöntem Seçimi ve Ar-Ge Gerekçesi (Neden Tıbbi Cihaz Standartları - MDR ve ISO 13485?)</h3>
+<p>Bir giyilebilir teknolojinin "Tüketici Elektroniği (Akıllı Saat, Fitness Bandı)" sınıfında mı yoksa "Klinik Tıbbi Cihaz (Diagnostic Medical Device)" sınıfında mı olacağını bu standartlar belirler. Projemizdeki cihazın, "T-Dalgası anormalliği, Kalp Krizi (MI) veya Atriyal Fibrilasyon" gibi teşhis koyan bir çıktı üretmesi (Yapay Zeka Karar Destek), onu yasalar önünde MDR (Medical Device Regulation) Sınıf IIa/IIb kategorisine sokar. Bu nedenle donanımın insanı elektrik çarpmasına (mikro-şok) veya ısınarak yanmaya karşı koruduğunu kanıtlayan IEC 60601-1 sertifikasyon hazırlığı Ar-Ge projesinin doğal bir mühendislik kısıtı ve yasal zorunluluğudur.</p>
+
+<h2>İş Paketi 5: Başarı Kriterleri Tablosu</h2>
+<table>
+    <tr>
+        <th>Başarı Kriteri ve İncelenecek Metrik</th>
+        <th>Hedeflenen Değer</th>
+        <th>Ölçüm Gerekçesi / TEYDEB Etkisi</th>
+    </tr>
+    <tr>
+        <td><strong>Klinik Uyum (Bland-Altman Bias Sapması)</strong></td>
+        <td>≤ %2 Sapma</td>
+        <td>Referans hastane Holter cihazı ile geliştirilen cihazımızın ölçümleri (BPM ve QRS genliği) arasındaki sapmanın klinik toleranslar içinde olduğunun kanıtı.</td>
+    </tr>
+    <tr>
+        <td><strong>Veri Bütünlüğü Stres Testi (Uçtan Uca)</strong></td>
+        <td>72 Saat Kesintisiz (0 Crash)</td>
+        <td>Sistemin hastanın üzerinde veya hastanede kilitlenmeden, bataryası ve işlemcisi dayanarak ticari bir ürün (Robust) kalitesinde çalışabilmesi.</td>
+    </tr>
+    <tr>
+        <td><strong>Tıbbi Standartlara Ön-Uyumluluk (Pre-Compliance)</strong></td>
+        <td>Geçer (Pass)</td>
+        <td>Akredite kuruluş testlerinde IEC 60601-1 (Elektriksel Güvenlik) ve EMI/EMC (Elektromanyetik Uyumluluk) testlerinden (örneğin cihaza statik elektrik - ESD verildiğinde bozulmaması) başarıyla geçmesi. Ticarileşmenin (THS 9) ön şartıdır.</td>
+    </tr>
+</table>
+
+<h2>İş Paketi 5: Risk Yönetimi ve B Planı (Mitigasyon) Tablosu</h2>
+<table>
+    <tr>
+        <th>Olası Risk / Başarısızlık Senaryosu</th>
+        <th>Riskin Şiddeti</th>
+        <th>B Planı (Mitigasyon Stratejisi)</th>
+    </tr>
+    <tr>
+        <td><strong>Elektriksel Güvenlik (Kaçak Akım / ESD) Testinden Kalma</strong></td>
+        <td>Çok Yüksek (Kritik)</td>
+        <td>Eğer cihaz akredite laboratuvarda statik elektrik (ESD) veya kaçak akım testinde sınır değerleri aşarsa pazar onayı alamaz. Mitigasyon olarak, tasarım aşamasında PCB kartı üzerinde dijital toprak ile analog toprak (AGND ve DGND) izolasyonu 0-Ohm dirençlerle/Ferrite bead'lerle ayrılacak, AFE girişine TVS diyotlar ve optokuplör izolasyon devreleri kasten eklenerek "Donanımsal Koruma Kalkanı" önceden kurulacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Hastane Etik Kurul Onayının Uzaması / Gecikmesi</strong></td>
+        <td>Orta (Zaman Planı Riski)</td>
+        <td>Pilot testler için planlanan etik kurul başvurularının aylar sürmesi proje süresini (Gantt Şeması) aşabilir. B Planı olarak, TİTCK (Türkiye İlaç ve Tıbbi Cihaz Kurumu) süreçlerine paralel olarak "Medikal Veri Simülatörleri" (Fluke ProSim 8) ile laboratuvar ortamında uluslararası FDA veritabanlarına (MIMIC-III, PhysioNet) veri basılarak klinik test aşamasının ilk bacağı (In-Vitro Validasyon) kurum içinde hızlandırılacak, projede zaman kaybedilmeyecektir.</td>
+    </tr>
+</table>
+
+</body>
+</html>

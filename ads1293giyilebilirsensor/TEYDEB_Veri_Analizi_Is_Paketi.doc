@@ -1,0 +1,145 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>TEYDEB Is Paketi</title>
+<style>
+  body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; }
+  h1, h2, h3, h4 { color: #2F5496; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+  th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+  th { background-color: #D9E1F2; font-weight: bold; }
+  li { margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<h3><strong>İŞ PAKETİ: Veri Analizi, Özellik Çıkarımı ve Makine Öğrenmesi ile Anlamlandırma</strong></h3>
+
+<h4><strong>1. Veri Ön İşleme ve Gürültü Filtreleme (Algoritmik Detay ve Gerekçe)</strong></h4>
+<p>Giyilebilir EKG cihazlarından elde edilen ham sinyaller doğası gereği oldukça gürültülüdür. Hastanın kas hareketleri (EMG gürültüsü - yüksek frekans), solunuma bağlı bazal kaymalar (Baseline Wander - düşük frekans) ve çevresel 50/60 Hz şebeke (Powerline Interference) parazitleri sinyali bozmaktadır. Verinin klinik tanı (Diagnostic Grade) seviyesine ulaşması ve yapay zeka modeline hatasız beslenmesi için uçta (Edge) gerçek zamanlı filtrelenmesi hayati önem taşır.</p>
+<ul>
+    <li><strong>Bant Geçiren (Bandpass) Filtreleme:</strong> Solunum artefaktlarını (0.5 Hz altı) ve yüksek frekanslı kas (EMG) gürültülerini (40 Hz üstü) elimine etmek için <strong>0.5 Hz - 40 Hz kesim frekanslarına (cutoff)</strong> sahip 4. Dereceden IIR (Sonsuz Darbe Yanıtlı) Butterworth filtresi uygulanacaktır.</li>
+    <li><strong>Çentik (Notch) Filtresi:</strong> Türkiye şebeke paraziti olan 50 Hz gürültüsünü tam merkezden baskılamak için oldukça dar bantlı ve -40 dB sönümleme katsayısına sahip dijital IIR Notch filtre tasarlanacaktır.</li>
+</ul>
+
+<h4><strong>Zorunlu Alt Başlık: Yöntem Seçimi ve Kıyaslama</strong></h4>
+<p><em>Neden FIR yerine IIR Butterworth ve Neden Analog yerine Dijital Filtre?</em></p>
+<p>Analog donanım filtreleri EKG sinyalinin fazını (Phase Shift) kaydırarak P ve T dalgalarının anatomik morfolojisini bozma riski taşır; bu da kardiyoloğun yanlış teşhis koymasına (Örn: yanlış ST çökmesi algısı) sebep olabilir. Bu nedenle filtreleme donanımda değil, dijital/yazılımsal olarak yapılacaktır. Dijital tarafta ise FIR (Finite Impulse Response) filtreler doğrusal faz (sıfır bozulma) sağlasa da, hesaplama maliyeti (computational cost) ve işlemci döngüsü (CPU cycles) açısından giyilebilir IoT cihazları (Edge Computing) için adeta bir batarya düşmanıdır. FIR filtresinin 100+ katsayı (tap) ile yaptığı ağır matematiksel işlemi, seçtiğimiz IIR Butterworth filtresi 4. dereceden bir denklemle mikrodenetleyiciyi (MCU) yormadan çok daha düşük enerjiyle gerçekleştirir. IIR'ın zafiyeti olan faz kayması sorunu ise, yazılımsal <strong>"Sıfır Faz Filtreleme (Zero-Phase / FiltFilt)"</strong> tekniğiyle sinyalin ileri ve geri çift yönlü filtrelenmesi sayesinde tamamen elimine edilmiştir.</p>
+
+<h4><strong>2. Özellik Çıkarımı (Feature Extraction)</strong></h4>
+<p>Filtrelenen temiz sinyal üzerinden kardiyak döngünün en temel yapı taşı olan R dalgası tepeleri ve R-R intervalinin (Anlık Nabız / BPM) bulunması projenin doğruluğu için kritik eşiktir. Bu işlem için biyomedikal literatürünün altın standardı olan <strong>Pan-Tompkins algoritması "Geliştirilmiş ve Uç (Edge) Uyumlu" hale getirilerek</strong> kullanılacaktır. Modifiye edilen süreç adım adım şu şekildedir:</p>
+<ol>
+    <li><strong>Türev Alma (Derivative):</strong> Sinyalin eğimi bulunarak QRS kompleksinin yüksek frekanslı karakteristikleri (eğimli R tepesi) belirginleştirilir.</li>
+    <li><strong>Karesini Alma (Squaring):</strong> Negatif dalgalar (Q ve S) pozitife çevrilir, tüm veri noktaları non-lineer olarak kuvvetlendirilerek düşük genlikli R dalgaları bile görünür hale getirilir.</li>
+    <li><strong>Hareketli Pencere İntegrali (Moving Window Integration):</strong> QRS dalgasının ortalama insan fizyolojisindeki genişliğine (yaklaşık 150 ms) uygun bir integral penceresi (sliding window) kullanılarak sinyalin alanı hesaplanır; böylece R dalgası dışındaki yüksek T dalgaları veya P dalgaları (gürültü) baskılanır.</li>
+    <li><strong>Adaptif Eşikleme (Adaptive Thresholding):</strong> Hastanın efor durumuna (yürüyüş, koşu) ve anlık sinyal-gürültü oranına (SNR) göre yazılım tarafından dinamik olarak güncellenen çift yönlü eşik değerleri (Signal Level & Noise Level) kullanılarak milisaniyelik zaman damgalarıyla R tepeleri %99.5 doğrulukla tespit edilir.</li>
+</ol>
+
+<h4><strong>3. Makine Öğrenmesi, Anomali Tespiti ve Ritim Öğrenme</strong></h4>
+<p>Geleneksel "kural tabanlı" (Rule-based / If-Else) EKG sistemlerinin aksine, geliştirilecek cihaz hastanın kendi <strong>"Bazal Ritmini (Kendi Normalini)"</strong> cihazın takıldığı ilk 15-30 dakikalık kalibrasyon süresinde öğrenecek (Transfer Learning) ve kişiselleştirilmiş (Personalized Medicine) anomali tespiti yapacaktır. Model, başlangıçta PhysioNet ve MIT-BIH veri tabanlarındaki yüz binlerce hastalıklı aritmi verisiyle bulutta eğitilecek, ardından cihaz her yeni hastada "kişiye özel eşik değerleri" belirleyecektir.</p>
+
+<h4><strong>Zorunlu Alt Başlık: Neden Bu Yapay Zeka Mimarisi?</strong></h4>
+<p>Zaman serisi verilerinde (EKG) sadece anlık bir morfolojik bozulmayı (Örn: tek bir geniş QRS) görmek klinik olarak yetmez; ritim düzensizliğini (Örn: Atriyal Fibrilasyon) geçmiş atımlarla ilişkilendirerek hafızada tutmak gerekir. Bu nedenle sadece evrişimli veya sadece hafızalı ağlar yerine her ikisinin güçlü yönlerini birleştiren <strong>"Hibrit 1D-CNN + BiLSTM"</strong> mimarisi seçilmiştir. Uzamsal özellikler (QRS genişliği, ST çökmesi) 1D-CNN (1 Boyutlu Evrişimli Sinir Ağı) ile; zamansal hafıza ve ardışık atım ilişkisi ise BiLSTM (İki Yönlü Uzun-Kısa Süreli Bellek) katmanları ile analiz edilecektir.</p>
+
+<table>
+    <tr>
+        <th>Kıyaslama Kriteri</th>
+        <th>Seçilen Yöntem (1D-CNN + BiLSTM)</th>
+        <th>Alternatif 1 (SVM / Random Forest)</th>
+        <th>Alternatif 2 (Saf 2D-CNN / ResNet)</th>
+    </tr>
+    <tr>
+        <td><strong>Klinik Doğruluk</strong></td>
+        <td>Çok Yüksek (>%95)</td>
+        <td>Orta (%80-85)</td>
+        <td>Yüksek (%90) ama zaman ilişkisi yok</td>
+    </tr>
+    <tr>
+        <td><strong>Gecikme (Latency)</strong></td>
+        <td>Düşük (<50 ms - Akışkan)</td>
+        <td>Çok Düşük (<10 ms)</td>
+        <td>Yüksek (>100 ms)</td>
+    </tr>
+    <tr>
+        <td><strong>Özellik Çıkarımı</strong></td>
+        <td>Otonom (Kendi öğrenir)</td>
+        <td>Manuel (Elle Feature Engineering)</td>
+        <td>Kısmi Otonom</td>
+    </tr>
+    <tr>
+        <td><strong>Batarya/Bulut Uyumu</strong></td>
+        <td>Optimize edilebilir (Bulut/Edge dengesi)</td>
+        <td>Çok Yüksek (Edge dostu)</td>
+        <td>Düşük (Ağır GPU/Bulut gücü gerektirir)</td>
+    </tr>
+</table>
+
+<p><em>Prediktif (Tahminsel) Analiz:</em> Sistemin sürekli olarak hastanın HRV (Kalp Hızı Değişkenliği) takibini yapması sayesinde, yaklaşan bir iskemik atak (Kalp Krizi) veya ventriküler aritmi krizi saatler öncesinden Makine Öğrenmesi algoritmalarıyla (Random Forest Regresyon) hesaplanacak (Risk Skoru) ve hekime erken uyarı bildirimleri iletilecektir.</p>
+
+<h4><strong>4. Veri Akışı ve Bulut Mimarisi</strong></h4>
+<p>Giyilebilir sistemlerde batarya ömrünü (minimum 24-48 saat) korumak ve kesintisiz çalışmayı sağlamak için "Uçta İşleme (Edge Computing)" ve "Bulut (Cloud) İşleme" görev paylaşımı net sınırlarla belirlenmiştir:</p>
+<ul>
+    <li><strong>Edge (Cihaz İçi) İşlem:</strong> Filtreleme (Butterworth/Notch), R dalgası tespiti (Pan-Tompkins), anlık BPM hesaplama ve bazal ritim öğrenme cihaz üzerindeki ARM Cortex-M serisi düşük güç tüketimli işlemcide gerçekleşir. Veri güvenliği gereği ham "Temiz EKG ve BPM verisi" cihazdaki donanımsal SD Karta 24 saat kesintisiz yazılır (Yedekleme/Backup).</li>
+    <li><strong>Cloud (Bulut) İşlem:</strong> Cihazdan sadece Bluetooth Low Energy (BLE 5.2) üzerinden sıkıştırılmış ve filtrelenmiş küçük paket veriler ağ geçidine (mobil uygulamaya) ve oradan buluta iletilir. Çok ağır tensör hesaplamaları gerektiren 15 sınıflı CNN-BiLSTM anomali tespiti ve prediktif risk analizi, AWS/Azure bulut mimarisindeki GPU'larda çalışır. Anormal bir durum tespit edilirse (Örn: AFib), uyarı 1 saniyenin altında cihaza veya hekimin ekranına geri döner.</li>
+</ul>
+
+<h4><strong>5. Başarı Kriterleri ve Çıktılar</strong></h4>
+<table>
+    <tr>
+        <th>Başarı Kriteri / Metrik</th>
+        <th>Hedeflenen Değer</th>
+        <th>Ölçüm Gerekçesi / TEYDEB Etkisi</th>
+    </tr>
+    <tr>
+        <td><strong>Accuracy (Doğruluk)</strong></td>
+        <td>≥ %95</td>
+        <td>AI modelinin genel hastalık sınıflandırma ve aritmi tespit başarısı.</td>
+    </tr>
+    <tr>
+        <td><strong>Sensitivity (Duyarlılık)</strong></td>
+        <td>≥ %97</td>
+        <td>Hasta olanı (anomaliyi) gözden kaçırmama (False Negative = 0) tıbbi zorunluluğu.</td>
+    </tr>
+    <tr>
+        <td><strong>Specificity (Özgüllük)</strong></td>
+        <td>≥ %90</td>
+        <td>Sağlıklı hastaya yanlışlıkla alarm vermeme (False Positive önleme) kapasitesi.</td>
+    </tr>
+    <tr>
+        <td><strong>F1-Score (Makro)</strong></td>
+        <td>≥ %92</td>
+        <td>Nadir görülen hastalık verilerinde (Sınıf dengesizliğine rağmen) modelin yüksek başarısı.</td>
+    </tr>
+    <tr>
+        <td><strong>Gecikme Süresi (Latency)</strong></td>
+        <td>< 50 ms</td>
+        <td>Edge tarafında filtreleme ve QRS tespitinin donanımsal olarak gerçek zamanlı çalışabilme hızı.</td>
+    </tr>
+</table>
+
+<h4><strong>Risk Yönetimi ve B Planı (Mitigasyon) Tablosu</strong></h4>
+<table>
+    <tr>
+        <th>Olası Risk / Başarısızlık Durumu</th>
+        <th>Riskin Şiddeti</th>
+        <th>B Planı (Mitigasyon Stratejisi)</th>
+    </tr>
+    <tr>
+        <td><strong>Sinyalin Aşırı Gürültülü Olması (Artefakt)</strong></td>
+        <td>Yüksek</td>
+        <td>Hasta yoğun efor altındaysa (koşu vb.) statik IIR filtreler yetersiz kalabilir. Bu durumda yazılım otonom olarak "Adaptive Noise Cancellation (Uyarlamalı Gürültü İptali)" veya "Wavelet Denoising" algoritmalarına geçiş yaparak dinamik bir gürültü temizliği sağlayacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Yapay Zeka Modelinin Ezberleme (Overfitting) Yapması</strong></td>
+        <td>Yüksek</td>
+        <td>Model laboratuvarda iyi, gerçek hastalarda kötü performans gösterirse; eğitim aşamasında veri artırımı (SMOTE) oranları maksimize edilecek, ağ yapısına %30 oranında Dropout (nöron söndürme) eklenecek ve ağırlık optimizasyonunda Cross-Entropy yerine Focal Loss fonksiyonu kullanılacaktır.</td>
+    </tr>
+    <tr>
+        <td><strong>Bulut Gecikmesi / İnternet Kopması</strong></td>
+        <td>Yüksek</td>
+        <td>Hastanın internet bağlantısı koptuğunda AI teşhisi alınamayabilir. Bu riske karşı kural tabanlı acil durum anomali tespit algoritması (Örn: Bradikardi/Taşikardi sınır eşikleri) Edge (Cihaz) içerisinde aktif kalacak ve bağımsız acil alarm üretebilecektir.</td>
+    </tr>
+</table>
+
+</body>
+</html>

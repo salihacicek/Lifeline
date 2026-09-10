@@ -1,0 +1,34 @@
+# ADS1293 Giyilebilir Telemetri Sistemi - Bağımlılıklar
+# =====================================================
+
+# Sinyal İşleme
+numpy>=1.24.0
+scipy>=1.10.0
+PyWavelets>=1.4.0
+
+# Derin Öğrenme (Apple Silicon MPS desteği)
+torch>=2.0.0
+
+# Makine Öğrenmesi
+xgboost>=1.7.0
+scikit-learn>=1.2.0
+
+# Veri Artırma (Sınıf Dengesizliği)
+imbalanced-learn>=0.10.0
+
+# PhysioNet Veri Erişimi
+wfdb>=4.1.0
+
+# Açıklanabilir Yapay Zeka
+shap>=0.42.0
+
+# Görselleştirme
+matplotlib>=3.7.0
+
+# Model Dışa Aktarım
+onnx>=1.14.0
+onnxruntime>=1.15.0
+
+# Yardımcı
+pandas>=2.0.0
+tqdm>=4.65.0
